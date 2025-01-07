@@ -115,7 +115,10 @@ function throwOnce()
 }
 
 // スコア計算関数
-function updateScoreBoard() {}
+function updateScoreBoard()
+{
+  global $currentFrame, $score;
+}
 
 // 関数の繰り返し処理
 while (!$isGameOver) {
