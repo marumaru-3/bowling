@@ -7,215 +7,349 @@ $currentFrame = 1;
 // 現在の投球回数
 $currentThrow = 1;
 // スコアボード
-$score = scoreBoadCreate();
+$score = scoreBoardCreate();
 // 各投球結果を記録
 $currentThrowPins = $totalPins;
 // ゲーム終了フラグ
 $isGameOver = false;
 
 // スコアボードの配列を初期化
-function scoreBoadCreate()
+function scoreBoardCreate($totalFrames = 10)
 {
-  $arr = [];
-  for ($i = 1; $i <= 10; $i++) {
-    // フレーム結果の初期化
-    // 10フレーム目の場合
-    if ($i === 10) {
-      $arr[$i] = [
-        "firstThrow" => null,
-        "secondThrow" => null,
-        "thirdThrow" => null,
-        "total" => null,
-      ];
+    $arr = [];
+    for ($i = 1; $i <= $totalFrames; $i++) {
+        // フレーム結果の初期化
+        // 10フレーム目の場合
+        if ($i === $totalFrames) {
+            $arr[$i] = [
+                "firstThrow" => null,
+                "secondThrow" => null,
+                "thirdThrow" => null,
+                "total" => null,
+            ];
+        }
+        // 10フレーム目より前の場合
+        else {
+            $arr[$i] = [
+                "firstThrow" => null,
+                "secondThrow" => null,
+                "total" => null,
+            ];
+        }
     }
-    // 10フレーム目より前の場合
-    else {
-      $arr[$i] = [
-        "firstThrow" => null,
-        "secondThrow" => null,
-        "total" => null,
-      ];
-    }
-  }
 
-  return $arr;
+    return $arr;
 }
 
-// 1投ごとの処理の関数
-function throwOnce()
+// 投球結果を取得する関数
+function getThrowResult($currentThrowPins)
 {
-  global $totalPins,
-    $currentFrame,
-    $currentThrow,
-    $score,
-    $currentThrowPins,
-    $isGameOver;
+    return random_int(0, $currentThrowPins);
+}
 
-  // 投球結果
-  $throw = random_int(0, $currentThrowPins);
-  // $throw = 10;
-
-  // 10フレーム目の特殊処理
-  if ($currentFrame === 10) {
+// 投球結果の記録
+function recordThrow($currentThrow, &$frame, $throwResult)
+{
+    // 1投目の場合
     if ($currentThrow === 1) {
-      // 1投目
-      $currentThrowPins -= $throw;
-      $score[$currentFrame]["firstThrow"] = $throw;
-
-      if ($throw === $totalPins) {
-        // ストライクの場合
-        // 投球結果をリセットして2投目へ
-        $currentThrowPins = $totalPins;
-        $currentThrow++;
-      } else {
-        // ストライク以外の場合
-        // 2投目へ
-        $currentThrow++;
-      }
-    } elseif ($currentThrow === 2) {
-      // 2投目
-      $currentThrowPins -= $throw;
-      $score[$currentFrame]["secondThrow"] = $throw;
-
-      if (
-        $throw === $totalPins ||
-        $score[$currentFrame]["firstThrow"] + $throw === $totalPins
-      ) {
-        // 2投目もストライクだった場合または2投目がスペアだった場合
-        // 投球結果をリセットして3投目へ
-        $currentThrowPins = $totalPins;
-        $currentThrow++;
-
-        // スコア計算
-        updateScoreBoard();
-      } elseif ($score[$currentFrame]["firstThrow"] === $totalPins) {
-        // 1投目がストライクだった場合
-        // 3投目へ
-        $currentThrow++;
-
-        // スコア計算
-        updateScoreBoard();
-      } else {
-        // それ以外
-        // スコア計算
-        updateScoreBoard();
-
-        // ゲームを終了
-        $isGameOver = true;
-      }
-    } elseif ($currentThrow === 3) {
-      // 3投目
-      $currentThrowPins -= $throw;
-      $score[$currentFrame]["thirdThrow"] = $throw;
-      // スコア計算
-      updateScoreBoard();
-
-      // ゲームを終了
-      $isGameOver = true;
+        $frame["firstThrow"] = $throwResult;
     }
-  }
-  // 1～9フレーム目までの通常処理
-  else {
+    // 2投目の場合
+    elseif ($currentThrow === 2) {
+        $frame["secondThrow"] = $throwResult;
+    }
+    // 3投目の場合
+    elseif ($currentThrow === 3) {
+        $frame["thirdThrow"] = $throwResult;
+    }
+}
+
+// 次の投球やフレームへの進行管理
+function nextThrowOrFrame($throwResult)
+{
+    global $totalPins, $currentFrame, $currentThrow, $score, $currentThrowPins;
     // 1投目
     if ($currentThrow === 1) {
-      $currentThrowPins -= $throw;
-      $score[$currentFrame]["firstThrow"] = $throw;
-
-      if ($throw === 10) {
-        // ストライクの場合
-        // 2投目をスキップ
-        $score[$currentFrame]["secondThrow"] = 0;
+        if ($throwResult === 10) {
+            // ストライクの場合
+            // 2投目をスキップ
+            $score[$currentFrame]["secondThrow"] = 0;
+            $currentThrow = 1;
+            $currentThrowPins = $totalPins;
+            // スコア計算
+            updateScoreBoard();
+            // 次のフレームへ
+            $currentFrame++;
+        } else {
+            // ストライク以外の場合
+            // 2投目へ
+            $currentThrow++;
+        }
+    }
+    // 2投目
+    elseif ($currentThrow === 2) {
+        // 投球回数と結果を初期値に戻す
         $currentThrow = 1;
         $currentThrowPins = $totalPins;
         // スコア計算
         updateScoreBoard();
         // 次のフレームへ
         $currentFrame++;
-      } else {
-        // ストライク以外の場合
-        // 2投目へ
-        $currentThrow++;
-      }
+    }
+}
+
+// 10フレーム目の特殊処理
+function handleFinalFrame($throwResult)
+{
+    global $totalPins, $currentFrame, $currentThrow, $score, $currentThrowPins;
+
+    // 1投目
+    if ($currentThrow === 1) {
+        if ($throwResult === $totalPins) {
+            // ストライクの場合
+            // 投球結果をリセットして2投目へ
+            $currentThrowPins = $totalPins;
+            $currentThrow++;
+        } else {
+            // ストライク以外の場合
+            // 2投目へ
+            $currentThrow++;
+        }
     }
     // 2投目
     elseif ($currentThrow === 2) {
-      $score[$currentFrame]["secondThrow"] = $throw;
-      // 投球回数と結果を初期値に戻す
-      $currentThrow = 1;
-      $currentThrowPins = $totalPins;
-      // スコア計算
-      updateScoreBoard();
-      // 次のフレームへ
-      $currentFrame++;
+        if (
+            $throwResult === $totalPins ||
+            $score[$currentFrame]["firstThrow"] + $throwResult === $totalPins
+        ) {
+            // 2投目もストライクだった場合または2投目がスペアだった場合
+            // 投球結果をリセットして3投目へ
+            $currentThrowPins = $totalPins;
+            $currentThrow++;
+        } elseif ($score[$currentFrame]["firstThrow"] === $totalPins) {
+            // 1投目がストライクだった場合
+            // 3投目へ
+            $currentThrow++;
+        }
+
+        // スコア計算
+        updateScoreBoard();
     }
-  }
+    // 3投目
+    elseif ($currentThrow === 3) {
+        // スコア計算
+        updateScoreBoard();
+    }
 }
 
-// 各フレームのスコア計算関数
+// ゲーム終了条件の管理
+function checkGameOver()
+{
+    global $currentFrame, $score, $totalPins, $isGameOver;
+    if (
+        $currentFrame === 10 &&
+        isset($score[$currentFrame]["firstThrow"]) &&
+        isset($score[$currentFrame]["secondThrow"])
+    ) {
+        if (
+            $score[$currentFrame]["firstThrow"] +
+                $score[$currentFrame]["secondThrow"] <
+                $totalPins ||
+            isset($score[$currentFrame]["thirdThrow"])
+        ) {
+            // ゲームを終了
+            $isGameOver = true;
+        }
+    }
+}
+
+// 投球結果を更新する関数
+function throwOnce()
+{
+    global $currentFrame, $currentThrow, $score, $currentThrowPins;
+
+    // 投球結果
+    // $throwResult = getThrowResult($currentThrowPins);
+    $throwResult = 10;
+
+    // 参照フレーム
+    $frame = &$score[$currentFrame];
+
+    // 残りのピン数
+    $currentThrowPins -= $throwResult;
+    // 投球結果を記録
+    recordThrow($currentThrow, $frame, $throwResult);
+
+    // 10フレーム目の特殊処理
+    if ($currentFrame === 10) {
+        handleFinalFrame($throwResult);
+    }
+    // 1～9フレーム目までの通常処理
+    else {
+        nextThrowOrFrame($throwResult);
+    }
+
+    checkGameOver();
+}
+
+// ここから計算
+// 各フレームのスコア計算
+function calcFrameScore($frameNumber, $score)
+{
+    $scoreTotal =
+        $score[$frameNumber]["firstThrow"] +
+        $score[$frameNumber]["secondThrow"];
+
+    return $scoreTotal;
+}
+
+// ストライクのボーナス計算
+function strikeBonus($frameNumber, $score)
+{
+    global $totalPins;
+
+    // 次もストライクの場合
+    if ($score[$frameNumber + 1]["firstThrow"] === $totalPins) {
+        // その次のスコアが記録されている場合
+        if (isset($score[$frameNumber + 2]["firstThrow"])) {
+            $bonusScore = $score[$frameNumber + 2]["firstThrow"];
+        }
+        // その次のスコアが存在しない場合
+        elseif (!isset($score[$frameNumber + 2])) {
+            $bonusScore = $score[$frameNumber + 1]["secondThrow"];
+        }
+        // その次のスコアが記録されていない場合
+        else {
+            // スコア計算をスキップ
+            continue;
+        }
+    }
+    // 次もストライクでない場合
+    else {
+        $bonusScore = $score[$frameNumber + 1]["secondThrow"];
+    }
+
+    return $bonusScore;
+}
+
+// スペアのボーナス計算
+function spareBonus($frameNumber, $score)
+{
+    $bonusScore = $score[$frameNumber + 1]["firstThrow"];
+
+    return $bonusScore;
+}
+
+// 10フレーム目の特殊処理
+function calcFinalFrameScore($frameNumber, $score)
+{
+    $scoreTotal = $score[$frameNumber]["thirdThrow"];
+
+    return $scoreTotal;
+}
+
+// 各フレームの合計スコアを計算する関数
 function updateScoreBoard()
 {
-  global $totalPins, $score;
+    global $totalPins, $score;
 
-  $scoreTotal = 0;
+    $scoreTotal = 0;
 
-  foreach ($score as $key => $frame) {
-    // 共通部分
-    $scoreTotal += $frame["firstThrow"] + $frame["secondThrow"];
-    // 10フレーム目の処理
-    if ($key === 10 && isset($frame['thirdThrow'])) {
-      $scoreTotal += $frame["thirdThrow"];
-    }
-    // 1～9フレーム目でストライクまたはスペアの場合
-    elseif (
-      $frame["firstThrow"] === $totalPins ||
-      $frame["firstThrow"] + $frame["secondThrow"] === $totalPins
-    ) {
-      // 次のスコアが記録されている場合
-      if (isset($score[$key + 1])) {
-        $scoreTotal += $score[$key + 1]["firstThrow"];
-
-        // ストライクの場合のみ
-        if ($frame["firstThrow"] === $totalPins) {
-          // 次もストライクの場合
-          if ($score[$key + 1]["firstThrow"] === $totalPins) {
-            // その次のスコアが記録されている場合
-            if (isset($score[$key + 2])) {
-              $scoreTotal += $score[$key + 2]["firstThrow"];
-            }
-            // 9フレーム目の場合
-            elseif (
-              $key === 9 &&
-              isset($score[$key + 1]["secondThrow"])
-            ) {
-              $scoreTotal += $score[$key + 1]["secondThrow"];
-            }
-            // その次のスコアが記録されていない場合
-            else {
-              // スコア計算をスキップ
-              continue;
-            }
-          }
-          // 次もストライクでない場合
-          else {
-            $scoreTotal += $score[$key + 1]["secondThrow"];
-          }
+    foreach ($score as $frameNumber => &$frame) {
+        // 全フレーム共通処理
+        if (isset($frame["firstThrow"]) && isset($frame["secondThrow"])) {
+            $scoreTotal += calcFrameScore($frameNumber, $score);
+        } else {
+            $scoreTotal = null;
         }
-      }
-      // 次のスコアが記録されていない場合
-      else {
-        // スコア計算をスキップ
-        continue;
-      }
-    }
 
-    // スコア合計を該当フレームに追加
-    $score[$key]["total"] = $score[$key]["total"] ?? $scoreTotal;
-  }
+        // 10フレーム目の処理
+        if ($frameNumber === 10 && isset($frame["thirdThrow"])) {
+            $scoreTotal += calcFinalFrameScore($frameNumber, $score);
+        }
+
+        // 1～9フレーム目でストライクまたはスペアの場合
+        elseif (
+            $frame["firstThrow"] === $totalPins ||
+            $frame["firstThrow"] + $frame["secondThrow"] === $totalPins
+        ) {
+            // 次のスコアが記録されている場合
+            if (
+                isset($score[$frameNumber + 1]["firstThrow"]) &&
+                isset($score[$frameNumber + 1]["secondThrow"])
+            ) {
+                $scoreTotal += spareBonus($frameNumber, $score);
+
+                // ストライクの場合のみ
+                if ($frame["firstThrow"] === $totalPins) {
+                }
+            }
+        }
+
+        // 共通部分
+        if (isset($frame["firstThrow"]) && isset($frame["secondThrow"])) {
+            $scoreTotal += $frame["firstThrow"] + $frame["secondThrow"];
+        } else {
+            $scoreTotal = null;
+        }
+
+        // 10フレーム目の処理
+        if ($frameNumber === 10 && isset($frame["thirdThrow"])) {
+            $scoreTotal += $frame["thirdThrow"];
+        }
+        // 1～9フレーム目でストライクまたはスペアの場合
+        elseif (
+            $frame["firstThrow"] === $totalPins ||
+            $frame["firstThrow"] + $frame["secondThrow"] === $totalPins
+        ) {
+            // 次のスコアが記録されている場合
+            if (
+                isset($score[$frameNumber + 1]["firstThrow"]) &&
+                isset($score[$frameNumber + 1]["secondThrow"])
+            ) {
+                $scoreTotal += $score[$frameNumber + 1]["firstThrow"];
+
+                // ストライクの場合のみ
+                if ($frame["firstThrow"] === $totalPins) {
+                    // 次もストライクの場合
+                    if ($score[$frameNumber + 1]["firstThrow"] === $totalPins) {
+                        // その次のスコアが記録されている場合
+                        if (isset($score[$frameNumber + 2]["firstThrow"])) {
+                            $scoreTotal +=
+                                $score[$frameNumber + 2]["firstThrow"];
+                        }
+                        // その次のスコアが存在しない場合
+                        elseif (!isset($score[$frameNumber + 2])) {
+                            $scoreTotal +=
+                                $score[$frameNumber + 1]["secondThrow"];
+                        }
+                        // その次のスコアが記録されていない場合
+                        else {
+                            // スコア計算をスキップ
+                            continue;
+                        }
+                    }
+                    // 次もストライクでない場合
+                    else {
+                        $scoreTotal += $score[$frameNumber + 1]["secondThrow"];
+                    }
+                }
+            }
+            // 次のスコアが記録されていない場合
+            else {
+                // スコア計算をスキップ
+                continue;
+            }
+        }
+
+        // スコア合計を該当フレームに追加
+        $frame["total"] = $frame["total"] ?? $scoreTotal;
+    }
 }
 
 // 関数の繰り返し処理
 while (!$isGameOver) {
-  throwOnce();
+    throwOnce();
 }
 
 // スコアボードの配列を画面に表示
