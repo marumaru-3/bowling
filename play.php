@@ -7,11 +7,39 @@ $currentFrame = 1;
 // 現在の投球回数
 $currentThrow = 1;
 // スコアボード
-$score = [];
+$score = scoreBoadCreate();
 // 各投球結果を記録
 $currentThrowPins = $totalPins;
 // ゲーム終了フラグ
 $isGameOver = false;
+
+// スコアボードの配列を初期化
+function scoreBoadCreate()
+{
+  $arr = [];
+  for ($i = 1; $i <= 10; $i++) {
+    // フレーム結果の初期化
+    // 10フレーム目の場合
+    if ($i === 10) {
+      $arr[$i] = [
+        "firstThrow" => null,
+        "secondThrow" => null,
+        "thirdThrow" => null,
+        "total" => null,
+      ];
+    }
+    // 10フレーム目より前の場合
+    else {
+      $arr[$i] = [
+        "firstThrow" => null,
+        "secondThrow" => null,
+        "total" => null,
+      ];
+    }
+  }
+
+  return $arr;
+}
 
 // 1投ごとの処理の関数
 function throwOnce()
@@ -24,29 +52,8 @@ function throwOnce()
     $isGameOver;
 
   // 投球結果
-  // $throw = random_int(0, $currentThrowPins);
-  $throw = 10;
-
-  // フレーム結果の初期化
-  if (!isset($score[$currentFrame])) {
-    // 10フレーム目の場合
-    if ($currentFrame === 10) {
-      $score[$currentFrame] = [
-        "firstThrow" => null,
-        "secondThrow" => null,
-        "thirdThrow" => null,
-        "total" => null,
-      ];
-    }
-    // 10フレーム目より前の場合
-    else {
-      $score[$currentFrame] = [
-        "firstThrow" => null,
-        "secondThrow" => null,
-        "total" => null,
-      ];
-    }
-  }
+  $throw = random_int(0, $currentThrowPins);
+  // $throw = 10;
 
   // 10フレーム目の特殊処理
   if ($currentFrame === 10) {
