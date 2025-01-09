@@ -128,11 +128,6 @@ class BowlingGame
     }
 }
 
-// スコア計算ロジックを分離
-class ScoreCalculator
-{
-}
-
 // ゲーム進行コード
 $game = new BowlingGame();
 
