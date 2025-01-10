@@ -38,12 +38,141 @@ class Frame
     }
 }
 
+// スコア計算用クラス
+class ScoreCalculator
+{
+    // 各フレームの合計スコアを計算する関数
+    public function updateScore(&$frames)
+    {
+        $totalPins = 10;
+        $scoreTotal = 0;
+
+        foreach ($frames as $frameIndex => &$frame) {
+            // 10フレーム目の特殊処理
+            if ($frameIndex === 10) {
+                if (isset($frame["thirdThrow"])) {
+                    $scoreTotal += $this->calcFinalFrameScore($frameIndex, $frames);
+                } else {
+                    $scoreTotal = null;
+                }
+            }
+
+            // 1～9フレーム目の処理
+            if ($frameIndex < 10) {
+                if (isset($frame["firstThrow"]) && isset($frame["secondThrow"])) {
+                    $scoreTotal += $this->calcBaseFrameScore($frameIndex, $frames);
+                } else {
+                    $scoreTotal = null;
+                }
+
+                // ストライクの場合
+                if ($frame["firstThrow"] === $totalPins) {
+                    // 次の1.2投目が記録されている場合
+                    if (
+                        isset($frames[$frameIndex + 1]["firstThrow"]) &&
+                        isset($frames[$frameIndex + 1]["secondThrow"])
+                    ) {
+                        $scoreTotal += $this->calcSpareBonus($frameIndex, $frames);
+
+                        $scoreTotal =
+                            $this->calcStrikeBonus($frameIndex, $frames, $totalPins) !==
+                            null
+                            ? $scoreTotal +
+                            $this->calcStrikeBonus(
+                                $frameIndex,
+                                $frames,
+                                $totalPins
+                            )
+                            : null;
+                    }
+                    // 記録されていない場合
+                    else {
+                        $scoreTotal = null;
+                    }
+                }
+                // スペアの場合
+                elseif (
+                    $frame["firstThrow"] + $frame["secondThrow"] ===
+                    $totalPins
+                ) {
+                    // 次の1投目が記録されている場合
+                    if (isset($frames[$frameIndex + 1]["firstThrow"])) {
+                        $scoreTotal += $this->calcSpareBonus($frameIndex, $frames);
+                    }
+                    // 記録されていない場合
+                    else {
+                        $scoreTotal = null;
+                    }
+                }
+            }
+
+            // スコア合計を該当フレームに追加
+            return $frame["total"] = $frame["total"] ?? $scoreTotal;
+        }
+    }
+
+    // 各フレームのスコア計算
+    private  function calcBaseFrameScore($frameIndex, $frames)
+    {
+        $scoreTotal =
+            $frames[$frameIndex]["firstThrow"] +
+            $frames[$frameIndex]["secondThrow"];
+
+        return $scoreTotal;
+    }
+
+    // ストライクのボーナス計算
+    private function calcStrikeBonus($frameIndex, $frames, $totalPins)
+    {
+        // 連続ストライクの場合
+        if ($frames[$frameIndex + 1]["firstThrow"] === $totalPins) {
+            // その次のスコアが記録されている場合
+            if (isset($frames[$frameIndex + 2]["firstThrow"])) {
+                $bonusScore = $frames[$frameIndex + 2]["firstThrow"];
+            }
+            // その次のスコアが存在しない場合
+            elseif (!isset($frames[$frameIndex + 2])) {
+                $bonusScore = $frames[$frameIndex + 1]["secondThrow"];
+            }
+            // その次のスコアが記録されていない場合
+            else {
+                $bonusScore = null;
+            }
+        }
+        // 次もストライクでない場合
+        else {
+            $bonusScore = $frames[$frameIndex + 1]["secondThrow"];
+        }
+
+        return $bonusScore;
+    }
+
+    // スペアのボーナス計算
+    private function calcSpareBonus($frameIndex, $frames)
+    {
+        $bonusScore = $frames[$frameIndex + 1]["firstThrow"];
+
+        return $bonusScore;
+    }
+
+    // 10フレーム目の特殊計算
+    private function calcFinalFrameScore($frameIndex, $frames)
+    {
+        $scoreTotal =
+            $this->calcBaseFrameScore($frameIndex, $frames) +
+            $frames[$frameIndex]["thirdThrow"];
+
+        return $scoreTotal;
+    }
+}
+
 // ゲーム全体の状態を管理し、スコア計算や投球の進行を統括
 class BowlingGame
 {
     private $frames = [];
     private $currentFrameIndex = 0;
     private $currentThrow = 1;
+    private $currentRemainingPins = 10;
     public $isGameOver = false;
 
     public function __construct($totalFrames = 10)
@@ -53,26 +182,37 @@ class BowlingGame
         }
     }
 
-    public function throwBall($pins)
+    // 投球の処理
+    public function throwBall()
     {
+        // 投球結果
+        // $throwResult = 10;
+        $throwResult = random_int(0, $this->currentRemainingPins);
+
+        // 残りのピン数を記録
+        $this->currentRemainingPins -= $throwResult;
+
         $currentFrame = $this->frames[$this->currentFrameIndex];
-        $currentFrame->recordThrow($this->currentThrow, $pins);
+        $currentFrame->recordThrow($this->currentThrow, $throwResult);
+
 
         if ($this->currentFrameIndex === 9) {
-            $this->handleFinalFrame($pins);
+            $this->handleFinalFrame($throwResult);
         } else {
-            $this->nextThrowOrFrame($pins);
+            $this->nextThrowOrFrame($throwResult);
         }
 
-        $this->updateScore();
+        $this->updateScore($this->frames);
         $this->checkGameOver();
     }
 
-    private function nextThrowOrFrame($pins)
+    // 次の投球か次のフレームに進めるか判定
+    private function nextThrowOrFrame($throwResult)
     {
-        if ($this->currentThrow === 1 && $pins === 10) {
+        if ($this->currentThrow === 1 && $throwResult === 10) {
             // ストライク
             $this->currentThrow = 1;
+            $this->currentRemainingPins = 10;
             $this->currentFrameIndex++;
         } elseif ($this->currentThrow === 1) {
             // ストライク以外の場合
@@ -80,19 +220,21 @@ class BowlingGame
         } else {
             // 2投目
             $this->currentThrow = 1;
+            $this->currentRemainingPins = 10;
             $this->currentFrameIndex++;
         }
     }
 
     // 10フレーム目の特殊処理を実装
-    private function handleFinalFrame($pins)
+    private function handleFinalFrame($throwResult)
     {
         $currentFrame = $this->frames[$this->currentFrameIndex];
 
         // 1投目
         if ($this->currentThrow === 1) {
-            if ($pins === 10) {
+            if ($throwResult === 10) {
                 // ストライク
+                $this->currentRemainingPins = 10;
                 $this->currentThrow++;
             } else {
                 // ストライク以外の場合
@@ -104,36 +246,41 @@ class BowlingGame
         if ($this->currentThrow === 2) {
             $currentScores = $currentFrame->getScore();
 
-
-            if ($currentScores['firstThrow'] + $currentScores['secondThrow'] === 10) {
+            if ($currentScores['firstThrow'] + $throwResult === 10) {
                 // スペア
+                $this->currentRemainingPins = 10;
                 $this->currentThrow++;
             } else if ($currentScores['firstThrow'] === 10) {
                 // 1投目がストライクだった場合
                 $this->currentThrow++;
-            } else {
-                // ストライクやスペア以外
-                // 3投目をスキップ
-                $currentScores['thirdThrow'] = 0;
             }
             return;
-        }
-        // 3投目
-        if ($this->currentThrow === 3) {
         }
     }
 
     // スコア計算を実装
-    private function updateScore() {}
+    private function updateScore($frames)
+    {
+        $scoreCalculator = new ScoreCalculator();
+        return $scoreCalculator->updateScore($frames);
+    }
 
     // ゲーム終了条件
     private function checkGameOver()
     {
+        $lastFrameScore = $this->frames[9]->getScore();
+
         if (
             $this->currentFrameIndex === 9 &&
-            $this->frames[9]->getScore()["thirdThrow"] !== null
+            isset($lastFrameScore['firstThrow']) &&
+            isset($lastFrameScore['secondThrow'])
         ) {
-            $this->isGameOver = true;
+            if (
+                isset($lastFrameScore['thirdThrow']) ||
+                $lastFrameScore['firstThrow'] + $lastFrameScore['secondThrow'] < 10
+            ) {
+                $this->isGameOver = true;
+            }
         }
     }
 
@@ -148,12 +295,12 @@ class BowlingGame
     }
 }
 
+
 // ゲーム進行コード
 $game = new BowlingGame();
 
 while (!$game->isGameOver) {
-    $pins = 10;
-    $game->throwBall($pins);
+    $game->throwBall();
 }
 
 print_r($game->getScoreBoard());
