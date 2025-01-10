@@ -277,13 +277,13 @@ function updateScoreBoard($totalPins, &$score)
                     $scoreTotal =
                         calcStrikeBonus($frameNumber, $score, $totalPins) !==
                         null
-                            ? $scoreTotal +
-                                calcStrikeBonus(
-                                    $frameNumber,
-                                    $score,
-                                    $totalPins
-                                )
-                            : null;
+                        ? $scoreTotal +
+                        calcStrikeBonus(
+                            $frameNumber,
+                            $score,
+                            $totalPins
+                        )
+                        : null;
                 }
                 // 記録されていない場合
                 else {

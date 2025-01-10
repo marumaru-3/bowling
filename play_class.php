@@ -36,18 +36,6 @@ class Frame
     {
         $this->total = $total;
     }
-
-    // ストライクの判定
-    public function isStrike()
-    {
-        return $this->firstThrow === 10;
-    }
-
-    // スペアの判定
-    public function isSpare()
-    {
-        return $this->firstThrow + $this->secondThrow === 10;
-    }
 }
 
 // ゲーム全体の状態を管理し、スコア計算や投球の進行を統括
@@ -99,12 +87,44 @@ class BowlingGame
     // 10フレーム目の特殊処理を実装
     private function handleFinalFrame($pins)
     {
+        $currentFrame = $this->frames[$this->currentFrameIndex];
+
+        // 1投目
+        if ($this->currentThrow === 1) {
+            if ($pins === 10) {
+                // ストライク
+                $this->currentThrow++;
+            } else {
+                // ストライク以外の場合
+                $this->currentThrow++;
+            }
+            return;
+        }
+        // 2投目
+        if ($this->currentThrow === 2) {
+            $currentScores = $currentFrame->getScore();
+
+
+            if ($currentScores['firstThrow'] + $currentScores['secondThrow'] === 10) {
+                // スペア
+                $this->currentThrow++;
+            } else if ($currentScores['firstThrow'] === 10) {
+                // 1投目がストライクだった場合
+                $this->currentThrow++;
+            } else {
+                // ストライクやスペア以外
+                // 3投目をスキップ
+                $currentScores['thirdThrow'] = 0;
+            }
+            return;
+        }
+        // 3投目
+        if ($this->currentThrow === 3) {
+        }
     }
 
     // スコア計算を実装
-    private function updateScore()
-    {
-    }
+    private function updateScore() {}
 
     // ゲーム終了条件
     private function checkGameOver()
@@ -132,7 +152,7 @@ class BowlingGame
 $game = new BowlingGame();
 
 while (!$game->isGameOver) {
-    $pins = random_int(0, 10);
+    $pins = 10;
     $game->throwBall($pins);
 }
 
