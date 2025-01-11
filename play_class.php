@@ -42,35 +42,46 @@ class Frame
 class ScoreCalculator
 {
     // 各フレームの合計スコアを計算する関数
-    public function updateScore(&$frames)
+    public function updateScore($frames)
     {
         $totalPins = 10;
         $scoreTotal = 0;
 
-        foreach ($frames as $frameIndex => &$frame) {
+        foreach ($frames as $frameIndex => $frame) {
+            $frameScore = $frame->getScore();
+            $frameNextScore = isset($frames[$frameIndex + 1]) ? $frames[$frameIndex + 1]->getScore() : null;
+
+
             // 10フレーム目の特殊処理
-            if ($frameIndex === 10) {
-                if (isset($frame["thirdThrow"])) {
-                    $scoreTotal += $this->calcFinalFrameScore($frameIndex, $frames);
+            if ($frameIndex === 9) {
+                if (
+                    isset($frameScore["thirdThrow"]) ||
+                    isset($frameScore["secondThrow"]) &&
+                    $frameScore["firstThrow"] + $frameScore["secondThrow"] < $totalPins
+                ) {
+                    $scoreTotal += $this->calcFinalFrameScore($frameScore);
                 } else {
                     $scoreTotal = null;
                 }
             }
 
             // 1～9フレーム目の処理
-            if ($frameIndex < 10) {
-                if (isset($frame["firstThrow"]) && isset($frame["secondThrow"])) {
-                    $scoreTotal += $this->calcBaseFrameScore($frameIndex, $frames);
+            if ($frameIndex < 9) {
+                if (
+                    isset($frameScore["firstThrow"]) &&
+                    (isset($frameScore["secondThrow"]) || $frameScore["firstThrow"] === 10)
+                ) {
+                    $scoreTotal += $this->calcBaseFrameScore($frameScore);
                 } else {
                     $scoreTotal = null;
                 }
 
                 // ストライクの場合
-                if ($frame["firstThrow"] === $totalPins) {
-                    // 次の1.2投目が記録されている場合
+                if ($frameScore["firstThrow"] === $totalPins) {
+                    // 次のフレームの投球が記録されている場合
                     if (
-                        isset($frames[$frameIndex + 1]["firstThrow"]) &&
-                        isset($frames[$frameIndex + 1]["secondThrow"])
+                        isset($frameScore["firstThrow"]) &&
+                        (isset($frameScore["secondThrow"]) || $frameScore["firstThrow"] === 10)
                     ) {
                         $scoreTotal += $this->calcSpareBonus($frameIndex, $frames);
 
@@ -92,11 +103,11 @@ class ScoreCalculator
                 }
                 // スペアの場合
                 elseif (
-                    $frame["firstThrow"] + $frame["secondThrow"] ===
+                    $frameScore["firstThrow"] + $frameScore["secondThrow"] ===
                     $totalPins
                 ) {
                     // 次の1投目が記録されている場合
-                    if (isset($frames[$frameIndex + 1]["firstThrow"])) {
+                    if (isset($frameNextScore["firstThrow"])) {
                         $scoreTotal += $this->calcSpareBonus($frameIndex, $frames);
                     }
                     // 記録されていない場合
@@ -107,16 +118,16 @@ class ScoreCalculator
             }
 
             // スコア合計を該当フレームに追加
-            return $frame["total"] = $frame["total"] ?? $scoreTotal;
+            $frame->setTotal($scoreTotal);
         }
     }
 
     // 各フレームのスコア計算
-    private  function calcBaseFrameScore($frameIndex, $frames)
+    private  function calcBaseFrameScore($frameScore)
     {
         $scoreTotal =
-            $frames[$frameIndex]["firstThrow"] +
-            $frames[$frameIndex]["secondThrow"];
+            $frameScore["firstThrow"] +
+            $frameScore["secondThrow"];
 
         return $scoreTotal;
     }
@@ -124,15 +135,18 @@ class ScoreCalculator
     // ストライクのボーナス計算
     private function calcStrikeBonus($frameIndex, $frames, $totalPins)
     {
+        $frameNextScore = isset($frames[$frameIndex + 1]) ? $frames[$frameIndex + 1]->getScore() : null;
+        $frameNextNextScore = isset($frames[$frameIndex + 2]) ? $frames[$frameIndex + 2]->getScore() : null;
+
         // 連続ストライクの場合
-        if ($frames[$frameIndex + 1]["firstThrow"] === $totalPins) {
+        if ($frameNextScore["firstThrow"] === $totalPins) {
             // その次のスコアが記録されている場合
-            if (isset($frames[$frameIndex + 2]["firstThrow"])) {
-                $bonusScore = $frames[$frameIndex + 2]["firstThrow"];
+            if (isset($frameNextNextScore["firstThrow"])) {
+                $bonusScore = $frameNextNextScore["firstThrow"];
             }
             // その次のスコアが存在しない場合
-            elseif (!isset($frames[$frameIndex + 2])) {
-                $bonusScore = $frames[$frameIndex + 1]["secondThrow"];
+            elseif (!isset($frameNextNextScore)) {
+                $bonusScore = $frameNextScore["secondThrow"];
             }
             // その次のスコアが記録されていない場合
             else {
@@ -141,7 +155,7 @@ class ScoreCalculator
         }
         // 次もストライクでない場合
         else {
-            $bonusScore = $frames[$frameIndex + 1]["secondThrow"];
+            $bonusScore = $frameNextScore["secondThrow"];
         }
 
         return $bonusScore;
@@ -150,17 +164,17 @@ class ScoreCalculator
     // スペアのボーナス計算
     private function calcSpareBonus($frameIndex, $frames)
     {
-        $bonusScore = $frames[$frameIndex + 1]["firstThrow"];
+        $bonusScore = $frames[$frameIndex + 1]->getScore()["firstThrow"];
 
         return $bonusScore;
     }
 
     // 10フレーム目の特殊計算
-    private function calcFinalFrameScore($frameIndex, $frames)
+    private function calcFinalFrameScore($frameScore)
     {
         $scoreTotal =
-            $this->calcBaseFrameScore($frameIndex, $frames) +
-            $frames[$frameIndex]["thirdThrow"];
+            $this->calcBaseFrameScore($frameScore) +
+            $frameScore["thirdThrow"];
 
         return $scoreTotal;
     }
