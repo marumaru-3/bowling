@@ -1,6 +1,9 @@
 <?php
 
 // 各フレームの状態（投球結果、スコア）を管理
+
+use WpOrg\Requests\Exception\InvalidArgument;
+
 class Frame
 {
     private $firstThrow = null;
@@ -11,6 +14,12 @@ class Frame
     // 投球結果の記録
     public function recordThrow($throwNumber, $pins)
     {
+        // 例外処理
+        if ($pins < 0 || $pins > 10) {
+            throw new InvalidArgumentException("ピンの数が無効です。");
+            return;
+        }
+
         if ($throwNumber === 1) {
             $this->firstThrow = $pins;
         } elseif ($throwNumber === 2) {
@@ -189,8 +198,12 @@ class BowlingGame
     private $currentRemainingPins = 10;
     public $isGameOver = false;
 
-    public function __construct($totalFrames = 10)
+    private $scoreCalculator;
+
+    public function __construct($scoreCalculator, $totalFrames = 10)
     {
+        $this->scoreCalculator = $scoreCalculator;
+
         for ($i = 0; $i < $totalFrames; $i++) {
             $this->frames[] = new Frame();
         }
@@ -273,10 +286,9 @@ class BowlingGame
     }
 
     // スコア計算を実装
-    private function updateScore($frames)
+    private function updateScore()
     {
-        $scoreCalculator = new ScoreCalculator();
-        return $scoreCalculator->updateScore($frames);
+        $this->scoreCalculator->updateScore($this->frames);
     }
 
     // ゲーム終了条件
@@ -311,7 +323,8 @@ class BowlingGame
 
 
 // ゲーム進行コード
-$game = new BowlingGame();
+$scoreCalculator = new ScoreCalculator();
+$game = new BowlingGame($scoreCalculator);
 
 while (!$game->isGameOver) {
     $game->throwBall();
