@@ -2,7 +2,6 @@
 
 // 各フレームの状態（投球結果、スコア）を管理
 
-use WpOrg\Requests\Exception\InvalidArgument;
 
 class Frame
 {
@@ -17,7 +16,6 @@ class Frame
         // 例外処理
         if ($pins < 0 || $pins > 10) {
             throw new InvalidArgumentException("ピンの数が無効です。");
-            return;
         }
 
         if ($throwNumber === 1) {
