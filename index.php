@@ -71,7 +71,7 @@
     const totalScore = document.querySelector('#score-board .total-score');
 
     // 最初にスコアボードを表示
-    fetch('throwBall.php', {
+    fetch('getGameData.php', {
         method: 'POST'
       })
       .then(response => response.json())
