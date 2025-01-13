@@ -66,6 +66,7 @@
 
   <script>
     const throwBtn = document.getElementById('throw-btn');
+    const resetBtn = document.getElementById('reset-btn');
     const throwScore = document.querySelector('#score-board .throw-score');
     const totalScore = document.querySelector('#score-board .total-score');
 
@@ -86,7 +87,7 @@
       })
       .catch(error => {
         console.log('エラーが発生しました:', error);
-      })
+      });
 
     // 投球リクエストを送信
     throwBtn.addEventListener('click', () => {
@@ -107,6 +108,22 @@
         })
         .catch(error => {
           console.log('エラーが発生しました:', error);
+        });
+    });
+
+    // ゲームリセットリクエストを送信
+    resetBtn.addEventListener('click', () => {
+      // PHPファイルにPOSTリクエストを送る
+      fetch('resetGame.php', {
+          method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+          // スコアボードを更新
+          updateScoreBoard(data.frames);
+
+          throwBtn.textContent = 'ボールを投げる';
+          throwBtn.disabled = false; // 投げるボタンを有効化
         })
     })
 
@@ -121,8 +138,8 @@
         };
 
         totalScore.children[frameIndex].innerHTML = frame.total;
-      })
-    }
+      });
+    };
   </script>
 </body>
 
