@@ -1,0 +1,43 @@
+.bowling-wrapper {
+  max-width: 840px;
+  margin: auto;
+}
+
+.bowling-title {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.score-board {
+  table-layout: fixed;
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 40px;
+}
+.score-board th,
+.score-board td {
+  border: 1px solid #000;
+  height: 40px;
+  text-align: center;
+}
+.score-board th {
+  background-color: #a39eff;
+}
+
+.btn-group {
+  display: flex;
+  justify-content: space-between;
+}
+.btn {
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  padding: 12px 24px;
+}
+.btn.throw {
+  background-color: #00ff95;
+}
+.btn.reset {
+  background-color: #fff200;
+}
