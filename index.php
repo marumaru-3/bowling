@@ -8,13 +8,26 @@
 </head>
 
 <body>
-  <button onclick="throwBall()">ボールを投げる</button>
+  <button id="throwBtn">ボールを投げる</button>
+  <div id="scoreBoard"></div>
 
 
   <script>
-    const throwBall = () => {
+    const throwBtn = document.getElementById('throwBtn');
+    const scoreBoard = document.getElementById('scoreBoard');
 
-    }
+    // 投球リクエストを送信
+    throwBtn.addEventListener('click', () => {
+      // PHPファイルにPOSTリクエストを送る
+      fetch('throwBall.php', {method: 'POST'})
+      .then(response => response.json())
+      .then(res => {
+        console.log(res); // やりたい処理
+      })
+      .catch(error => {
+        console.log(error); // エラー表示
+      })
+    })
   </script>
 </body>
 
