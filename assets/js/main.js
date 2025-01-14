@@ -7,7 +7,7 @@ window.addEventListener("load", () => {
   const bowlingResultText = document.querySelector(".bowling-result p");
 
   // 最初にスコアボードを表示
-  fetch("getGameData.php", {
+  fetch("../src/controllers/getGameData.php", {
     method: "POST",
   })
     .then((response) => response.json())
@@ -34,14 +34,6 @@ window.addEventListener("load", () => {
   });
 
   throwBtn.addEventListener("click", () => {
-    // ビジュアル画面までスクロール
-    // const bowlingVisualDOMRect = bowlingVisual.getBoundingClientRect();
-    // const bowlingVisualTop = bowlingVisualDOMRect.top + window.pageYOffset;
-    // window.scrollTo({
-    //   top: bowlingVisualTop,
-    //   behavior: "smooth",
-    // });
-
     // アニメーション
     if (bowlingVisual.classList.contains("is-animation")) {
       bowlingVisual.classList.remove("is-animation");
@@ -54,7 +46,7 @@ window.addEventListener("load", () => {
 
     // 投球リクエストを送信
     // PHPファイルにPOSTリクエストを送る
-    fetch("throwBall.php", {
+    fetch("../src/controllers/throwBall.php", {
       method: "POST",
     })
       .then((response) => response.json())
@@ -84,7 +76,7 @@ window.addEventListener("load", () => {
     bowlingVisual.classList.remove("is-animation");
 
     // PHPファイルにPOSTリクエストを送る
-    fetch("resetGame.php", {
+    fetch("../src/controllers/resetGame.php", {
       method: "POST",
     })
       .then((response) => response.json())

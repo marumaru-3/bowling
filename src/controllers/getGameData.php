@@ -3,7 +3,7 @@
 session_start();
 
 // BowlingGameクラスファイルの読み込み
-require_once "BowlingGame.php";
+require_once "../models/BowlingGame.php";
 
 // セッションからゲームの状態を取得（初回リクエストなら新規作成）
 if (!isset($_SESSION["game"])) {

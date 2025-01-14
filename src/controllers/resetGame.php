@@ -6,7 +6,7 @@ session_start();
 unset($_SESSION["game"]);
 
 // BowlingGameクラスファイルの読み込み
-require_once "BowlingGame.php";
+require_once "../models/BowlingGame.php";
 
 // 新しいゲームを作成してセッションに保存
 $scoreCalculator = new ScoreCalculator();
