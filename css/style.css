@@ -79,8 +79,9 @@
   background-color: #fff;
   border-radius: 16px;
   border: 8px solid #fff200;
-  width: 380px;
-  height: 360px;
+  max-width: 380px;
+  width: 90%;
+  aspect-ratio: 19/18;
   position: absolute;
   top: 0;
   bottom: 0;
@@ -104,7 +105,7 @@
   text-align: center;
 }
 .bowling-result p .pin-num {
-  font-size: 48px;
+  font-size: 120%;
   margin-right: 4px;
 }
 /* アニメーション処理 */
@@ -125,3 +126,39 @@
   transition: 0.5s 1s all;
 }
 /* / アニメーション処理 */
+
+@media (max-width: 599px) {
+  .bowling-wrapper {
+    padding: 32px 16px;
+  }
+
+  .bowling-title {
+    font-size: 28px;
+    margin-bottom: 32px;
+  }
+
+  .score-board {
+    margin-bottom: 32px;
+  }
+  .score-board th,
+  .score-board td {
+    font-size: 3vw;
+    height: 7vw;
+  }
+
+  .bowling-visual {
+    height: 100vw;
+  }
+  .bowling-ball {
+    width: 24vw;
+    height: 24vw;
+  }
+  .bowling-result p {
+    font-size: 8vw;
+  }
+  /* アニメーション処理 */
+  .bowling-visual.is-animation .bowling-ball {
+    transform: translateY(-42vw) scale(0.7);
+  }
+  /* / アニメーション処理 */
+}

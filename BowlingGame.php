@@ -224,7 +224,7 @@ class BowlingGame
     public function throwBall()
     {
         // 投球結果
-        // $throwResult = 5;
+        // $throwResult = 10;
         $throwResult = random_int(0, $this->currentRemainingPins);
 
         // 残りのピン数を記録

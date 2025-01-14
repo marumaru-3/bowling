@@ -35,12 +35,12 @@ window.addEventListener("load", () => {
 
   throwBtn.addEventListener("click", () => {
     // ビジュアル画面までスクロール
-    const bowlingVisualDOMRect = bowlingVisual.getBoundingClientRect();
-    const bowlingVisualTop = bowlingVisualDOMRect.top + window.pageYOffset;
-    window.scrollTo({
-      top: bowlingVisualTop,
-      behavior: "smooth",
-    });
+    // const bowlingVisualDOMRect = bowlingVisual.getBoundingClientRect();
+    // const bowlingVisualTop = bowlingVisualDOMRect.top + window.pageYOffset;
+    // window.scrollTo({
+    //   top: bowlingVisualTop,
+    //   behavior: "smooth",
+    // });
 
     // アニメーション
     if (bowlingVisual.classList.contains("is-animation")) {
