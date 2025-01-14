@@ -7,7 +7,7 @@ window.addEventListener("load", () => {
   const bowlingResultText = document.querySelector(".bowling-result p");
 
   // 最初にスコアボードを表示
-  fetch("../src/controllers/getGameData.php", {
+  fetch("./api/getGameData.php", {
     method: "POST",
   })
     .then((response) => response.json())
@@ -46,7 +46,7 @@ window.addEventListener("load", () => {
 
     // 投球リクエストを送信
     // PHPファイルにPOSTリクエストを送る
-    fetch("../src/controllers/throwBall.php", {
+    fetch("./api/throwBall.php", {
       method: "POST",
     })
       .then((response) => response.json())
@@ -76,7 +76,7 @@ window.addEventListener("load", () => {
     bowlingVisual.classList.remove("is-animation");
 
     // PHPファイルにPOSTリクエストを送る
-    fetch("../src/controllers/resetGame.php", {
+    fetch("./api/resetGame.php", {
       method: "POST",
     })
       .then((response) => response.json())

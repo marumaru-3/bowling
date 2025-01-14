@@ -14,9 +14,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100..900&display=swap"
     rel="stylesheet">
   <link rel="stylesheet"
-    href="../assets/css/reset.css">
+    href="./assets/css/reset.css">
   <link rel="stylesheet"
-    href="../assets/css/style.css">
+    href="./assets/css/style.css">
 </head>
 
 <body>
@@ -69,7 +69,7 @@
         class="btn reset">最初から始める</button>
     </div>
   </div>
-  <script src="../assets/js/main.js"></script>
+  <script src="./assets/js/main.js"></script>
 </body>
 
 </html>
