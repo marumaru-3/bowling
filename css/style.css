@@ -19,6 +19,7 @@
 .score-board th,
 .score-board td {
   border: 1px solid #000;
+  font-weight: bold;
   height: 40px;
   text-align: center;
 }
@@ -39,6 +40,11 @@
 }
 .btn.throw {
   background-color: #00ff95;
+}
+.btn.throw.game-over {
+  background-color: #f00;
+  color: #fff;
+  pointer-events: none;
 }
 .btn.reset {
   background-color: #fff200;
@@ -86,7 +92,7 @@
 }
 .bowling-result p {
   color: #fff;
-  font-size: 48px;
+  font-size: 40px;
   font-weight: 900;
   letter-spacing: 4px;
   text-shadow: 2px 2px 2px #ff0059, -2px 2px 2px #ff0059, 2px -2px 2px #ff0059,
@@ -94,8 +100,12 @@
     -2px 0px 2px #ff0059, 0px -2px 2px #ff0059;
   position: absolute;
   top: 40px;
-  left: 50%;
-  transform: translateX(-50%);
+  width: 100%;
+  text-align: center;
+}
+.bowling-result p .pin-num {
+  font-size: 48px;
+  margin-right: 4px;
 }
 /* アニメーション処理 */
 .bowling-ball {
