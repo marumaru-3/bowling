@@ -1,68 +1,111 @@
 window.addEventListener("load", () => {
-  const throwBtn = document.getElementById("throw-btn");
-  const resetBtn = document.getElementById("reset-btn");
-  const throwScore = document.querySelector("#score-board .throw-score");
-  const totalScore = document.querySelector("#score-board .total-score");
-  const bowlingVisual = document.getElementById("bowling-visual");
-  const bowlingResultText = document.querySelector(".bowling-result p");
+  const elements = {
+    throwBtn: document.getElementById("throw-btn"),
+    resetBtn: document.getElementById("reset-btn"),
+    throwScore: document.querySelector("#score-board .throw-score"),
+    totalScore: document.querySelector("#score-board .total-score"),
+    bowlingVisual: document.getElementById("bowling-visual"),
+    resultText: document.querySelector(".bowling-result p"),
+  };
 
-  // 最初にスコアボードを表示
-  fetch("./api/getGameData.php", {
-    method: "POST",
-  })
-    .then((response) => response.json())
+  const API_ENDPOINTS = {
+    GET_GAME_DATA: "./api/getGameData.php",
+    THROW_BALL: "./api/throwBall.php",
+    RESET_GAME: "./api/resetGame.php",
+  };
+
+  const FRAME_COUNT = 10;
+
+  // 共通のAPI呼び出し関数
+  const apiRequest = (url, method = "POST") =>
+    fetch(url, { method }).then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    });
+
+  // アニメーション制御
+  const toggleAnimation = (visualElement) => {
+    visualElement.classList.remove("is-animation");
+    setTimeout(() => visualElement.classList.add("is-animation"), 200);
+  };
+
+  // スコアボードを更新
+  const updateScoreBoard = (frames) => {
+    frames.forEach((frame, index) => {
+      const offset = index * 2;
+      elements.throwScore.children[offset].innerHTML = frame.firstThrow;
+      elements.throwScore.children[offset + 1].innerHTML = frame.secondThrow;
+      if (index === FRAME_COUNT - 1) {
+        elements.throwScore.children[offset + 2].innerHTML = frame.thirdThrow;
+      }
+      elements.totalScore.children[index].innerHTML = frame.total;
+    });
+  };
+
+  // 投球結果をビジュアルに描画
+  const showResultVisual = (frames) => {
+    const lastFrame = frames.findLast(
+      (frame) =>
+        frame.firstThrow !== null ||
+        frame.secondThrow !== null ||
+        frame.thirdThrow !== null
+    );
+
+    if (!lastFrame) return;
+
+    const scores = [
+      lastFrame.firstThrow,
+      lastFrame.secondThrow,
+      lastFrame.thirdThrow,
+    ].filter((score) => score !== null);
+
+    const latestScore = scores.at(-1);
+
+    if (
+      (lastFrame.firstThrow === 10 && lastFrame.secondThrow === null) ||
+      (lastFrame.firstThrow === 10 && lastFrame.secondThrow === 10) ||
+      lastFrame.thirdThrow === 10
+    ) {
+      elements.resultText.innerHTML = "ストライク!!";
+    } else if (
+      (lastFrame.firstThrow + lastFrame.secondThrow === 10 &&
+        lastFrame.thirdThrow === null) ||
+      lastFrame.secondThrow + lastFrame.thirdThrow === 10
+    ) {
+      elements.resultText.innerHTML = "スペア!!";
+    } else {
+      elements.resultText.innerHTML = `<span class="pin-num">${latestScore}</span>本ヒット`;
+    }
+  };
+
+  // 初期データのロード
+  apiRequest(API_ENDPOINTS.GET_GAME_DATA)
     .then((data) => {
-      // スコアボードを更新
       updateScoreBoard(data.frames);
-
-      // ゲーム終了判定
       if (data.isGameOver) {
-        throwBtn.textContent = "ゲーム終了";
-        throwBtn.classList.add("game-over");
-        throwBtn.disabled = true; // ボタンを無効化
+        elements.throwBtn.textContent = "ゲーム終了";
+        elements.throwBtn.classList.add("game-over");
+        elements.throwBtn.disabled = true;
       }
     })
     .catch((error) => {
       console.log("エラーが発生しました:", error);
     });
 
-  bowlingVisual.addEventListener("click", () => {
-    // アニメーション
-    if (bowlingVisual.classList.contains("is-animation")) {
-      bowlingVisual.classList.remove("is-animation");
-    }
-  });
+  // イベントリスナー
+  elements.throwBtn.addEventListener("click", () => {
+    toggleAnimation(elements.bowlingVisual);
 
-  throwBtn.addEventListener("click", () => {
-    // アニメーション
-    if (bowlingVisual.classList.contains("is-animation")) {
-      bowlingVisual.classList.remove("is-animation");
-      setTimeout(() => {
-        bowlingVisual.classList.add("is-animation");
-      }, 200);
-    } else {
-      bowlingVisual.classList.add("is-animation");
-    }
-
-    // 投球リクエストを送信
-    // PHPファイルにPOSTリクエストを送る
-    fetch("./api/throwBall.php", {
-      method: "POST",
-    })
-      .then((response) => response.json())
+    apiRequest(API_ENDPOINTS.THROW_BALL)
       .then((data) => {
-        // ビジュアルアニメーションに投球結果を表示
-        resultScoreVisual(data.frames);
-        // スコアボードを更新
-        setTimeout(() => {
-          updateScoreBoard(data.frames);
-        }, 1300);
-
-        // ゲーム終了判定
+        showResultVisual(data.frames);
+        setTimeout(() => updateScoreBoard(data.frames), 1300);
         if (data.isGameOver) {
-          throwBtn.textContent = "ゲーム終了";
-          throwBtn.classList.add("game-over");
-          throwBtn.disabled = true; // ボタンを無効化
+          elements.throwBtn.textContent = "ゲーム終了";
+          elements.throwBtn.classList.add("game-over");
+          elements.throwBtn.disabled = true;
         }
       })
       .catch((error) => {
@@ -70,88 +113,18 @@ window.addEventListener("load", () => {
       });
   });
 
-  // ゲームリセットリクエストを送信
-  resetBtn.addEventListener("click", () => {
-    // アニメーション
-    bowlingVisual.classList.remove("is-animation");
-
-    // PHPファイルにPOSTリクエストを送る
-    fetch("./api/resetGame.php", {
-      method: "POST",
-    })
-      .then((response) => response.json())
+  elements.resetBtn.addEventListener("click", () => {
+    apiRequest(API_ENDPOINTS.RESET_GAME)
       .then((data) => {
-        // スコアボードを更新
         updateScoreBoard(data.frames);
-
-        throwBtn.textContent = "ボールを投げる";
-        if (throwBtn.classList.contains("game-over")) {
-          throwBtn.classList.remove("game-over");
+        elements.throwBtn.textContent = "ボールを投げる";
+        if (elements.throwBtn.classList.contains("game-over")) {
+          elements.throwBtn.classList.remove("game-over");
         }
-        throwBtn.disabled = false; // 投げるボタンを有効化
+        elements.throwBtn.disabled = false;
+      })
+      .catch((error) => {
+        console.log("エラーが発生しました:", error);
       });
   });
-
-  // スコアボードをHTMLに描画
-  const updateScoreBoard = (frames) => {
-    frames.forEach((frame, frameIndex) => {
-      throwScore.children[(frameIndex + 1) * 2 - 2].innerHTML =
-        frame.firstThrow;
-
-      throwScore.children[(frameIndex + 1) * 2 - 1].innerHTML =
-        frame.secondThrow;
-
-      if (frameIndex === 9) {
-        throwScore.children[(frameIndex + 1) * 2].innerHTML = frame.thirdThrow;
-      }
-
-      totalScore.children[frameIndex].innerHTML = frame.total;
-    });
-  };
-  // ビジュアルアニメーションに何本倒したか描画
-  const resultScoreVisual = (frames) => {
-    const notNullScoreFrame = frames.filter((frame, frameIndex) => {
-      if (
-        frame.firstThrow !== null ||
-        frame.secondThrow !== null ||
-        frame.thirdThrow !== null
-      ) {
-        return frame;
-      }
-    });
-    const latestFrameScore = Object.values(
-      notNullScoreFrame[notNullScoreFrame.length - 1]
-    ).filter((score, scoreIndex) => {
-      return scoreIndex < 3 && score !== null;
-    });
-
-    const latestScore = latestFrameScore[latestFrameScore.length - 1];
-
-    if (notNullScoreFrame.length === 10) {
-      if (
-        (latestFrameScore[0] === 10 && !latestFrameScore[1]) ||
-        (latestFrameScore[0] === 10 && latestFrameScore[1] === 10) ||
-        latestFrameScore[2] === 10
-      ) {
-        bowlingResultText.innerHTML = "ストライク!!";
-      } else if (
-        (latestFrameScore[0] !== 10 &&
-          latestFrameScore[0] + latestFrameScore[1] === 10 &&
-          !latestFrameScore[2]) ||
-        latestFrameScore[1] + latestFrameScore[2] === 10
-      ) {
-        bowlingResultText.innerHTML = "スペア!!";
-      } else {
-        bowlingResultText.innerHTML = `<span class="pin-num">${latestScore}</span>本ヒット`;
-      }
-    } else {
-      if (latestFrameScore[0] === 10 || latestFrameScore[0] === 10) {
-        bowlingResultText.innerHTML = "ストライク!!";
-      } else if (latestFrameScore[0] + latestFrameScore[1] === 10) {
-        bowlingResultText.innerHTML = "スペア!!";
-      } else {
-        bowlingResultText.innerHTML = `<span class="pin-num">${latestScore}</span>本ヒット`;
-      }
-    }
-  };
 });
