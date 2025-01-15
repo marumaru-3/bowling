@@ -80,6 +80,13 @@ window.addEventListener("load", () => {
     }
   };
 
+  elements.bowlingVisual.addEventListener("click", () => {
+    // アニメーション
+    if (elements.bowlingVisual.classList.contains("is-animation")) {
+      elements.bowlingVisual.classList.remove("is-animation");
+    }
+  });
+
   // 初期データのロード
   apiRequest(API_ENDPOINTS.GET_GAME_DATA)
     .then((data) => {
