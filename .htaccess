@@ -6,6 +6,3 @@ RewriteRule ^ - [L]
 
 # controllersディレクトリ内のファイルをURLでアクセス可能に
 RewriteRule ^api/(.*)$ src/controllers/$1 [L,QSA]
-
-# views/index.php をルートとして扱う
-RewriteRule ^$ views/index.php [L]
